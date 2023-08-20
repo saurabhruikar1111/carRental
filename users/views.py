@@ -1,12 +1,16 @@
 from django.shortcuts import render
 from . schemas.user import signupSchema,loginSchema
-from django.http import HttpResponse ,HttpResponseBadRequest
+from django.http import HttpResponse ,HttpResponseBadRequest,JsonResponse
 from . models import UserAuthonticationModel
 import json
 
 def signup(request):
+    if request.method == "GET":
+        return render(request,"users/signupPage.html")
+    
     if request.method == "POST":
-        data = json.loads(request.body.decode("utf-8"))
+        # data = json.loads(request.body.decode("utf-8"))
+        data = {"username":request.POST.get("username"),"password":request.POST.get("password")}
         form = signupSchema(data=data)
         if form.is_valid():
             if UserAuthonticationModel.objects.filter(username=data["username"]).first():
@@ -35,5 +39,18 @@ def login(request):
         return HttpResponseBadRequest("Invalid input to form")
         
     return HttpResponseBadRequest("Method only accepts post method")
-        
 
+
+def check_username_exists(request):
+    username = request.GET.get('username', None)
+    
+    if username:
+        user_exists = UserAuthonticationModel.objects.filter(username=username).exists()
+        if user_exists:
+            response = "true"
+        else:
+            response = "false"
+    else:
+        response = "error"
+
+    return JsonResponse(response, safe=False)
