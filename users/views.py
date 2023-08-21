@@ -3,6 +3,7 @@ from . schemas.user import signupSchema,loginSchema
 from django.http import HttpResponse ,HttpResponseBadRequest,JsonResponse
 from . models import UserAuthonticationModel
 import json
+from django.contrib import sessions
 
 def signup(request):
     if request.method == "GET":
@@ -10,7 +11,11 @@ def signup(request):
     
     if request.method == "POST":
         # data = json.loads(request.body.decode("utf-8"))
-        data = {"username":request.POST.get("username"),"password":request.POST.get("password")}
+        data = {"username":request.POST.get("username"),
+                "password":request.POST.get("password"),
+                "role":request.POST.get("role","emp")
+                }
+        print(data)
         form = signupSchema(data=data)
         if form.is_valid():
             if UserAuthonticationModel.objects.filter(username=data["username"]).first():
@@ -23,19 +28,21 @@ def signup(request):
     return HttpResponseBadRequest("Method only accepts post method")
 
 def login(request):
+    
     if request.method == "POST":
         data = json.loads(request.body.decode("utf-8"))
         form = loginSchema(data=data)
 
         if form.is_valid():
-            new_user = UserAuthonticationModel.objects.filter(username=data["username"]).first()
+            new_user = UserAuthonticationModel.objects.filter(username=data["username"]).values("username","password").first()
             
             if not new_user:
                 return HttpResponseBadRequest("username does not exisists")
-            print(data["password"])
+            
             if not new_user.check_password(data["password"]):
                 return HttpResponseBadRequest("Incorrect credentials, please try again")
-            return HttpResponse("user login successfully")
+            request.session["username"] = data["username"]
+            return HttpResponse("user login successfully new session started")
         return HttpResponseBadRequest("Invalid input to form")
         
     return HttpResponseBadRequest("Method only accepts post method")
@@ -54,3 +61,8 @@ def check_username_exists(request):
         response = "error"
 
     return JsonResponse(response, safe=False)
+
+def protected_method(request):
+    if "username" in request.session:
+        return HttpResponse("you are logged in, Welcome")
+    return HttpResponse("please login first")
