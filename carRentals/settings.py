@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from decouple import config
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -135,3 +136,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# SMTP configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT")  # Use the appropriate port for your SMTP server
+EMAIL_USE_TLS = True  # Set to True if your server uses TLS, otherwise use False
+EMAIL_USE_SSL = False  # Set to True if your server uses SSL, otherwise use False
+
+EMAIL_HOST_USER = config("EMAIL_USERNAME")  # Your SMTP email
+EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")  # Your SMTP password
