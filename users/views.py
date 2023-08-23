@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from . schemas.user import signupSchema,loginSchema
 from django.http import HttpResponse ,HttpResponseBadRequest,JsonResponse
-from . models import UserAuthonticationModel
+from . models import UserAuthonticationModel,EmployeeLoginDetails
 import json
 from .utils import session_data
+from datetime import datetime
 
 def signup(request):
     if request.method == "GET":
@@ -33,17 +34,27 @@ def login(request):
 
         if form.is_valid():
             new_user = UserAuthonticationModel.objects.filter(username=data["username"]).first()
-            
+            print(data)
             if not new_user:
                 return HttpResponseBadRequest("username does not exisists")
             
             if not new_user.verify_password(data["password"]):
-                return HttpResponseBadRequest("Incorrect credentials, please try again")
+                return HttpResponseBadRequest("Incorrect Password, please try again")
             
+            # token verification
+            if data.get("special_token",""):
+                employee_model = new_user.employee_details.first()
+                if not employee_model.verify_token(data["special_token"]):
+                    return HttpResponseBadRequest("Incorrect Token, try again")
+                print(datetime.now(),employee_model.datetime_employee_registered)
+                if not employee_model.is_within_days_from_current_time(hours=7):
+                    return HttpResponse("Token expire please contact the admin for renewing tokens")
+
+
             session_data_obj = session_data(**new_user.get_session_data())
             print(new_user.role)
             request.session["session_data"] = session_data_obj.serialise()
-            return HttpResponse("user login successfully new session started")
+            return HttpResponse(f"user login successfully new session started user: {data.get('role','reg')}")
         return HttpResponseBadRequest("Invalid input to form")
         
     return HttpResponseBadRequest("Method only accepts post method")
